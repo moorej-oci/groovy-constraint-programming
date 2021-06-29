@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 // needs manual install & configuration on macos and windows
-import com.google.ortools.Loader
+import io.github.ejif.ortools.Ortools
 import com.google.ortools.constraintsolver.IntVar
 import com.google.ortools.constraintsolver.Solver
 
-Loader.loadNativeLibraries()
+Ortools.load()
 
 new Solver('Send+More=Money').with {
     def s = makeIntVar(1, 9, 's')

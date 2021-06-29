@@ -38,9 +38,9 @@ dependencies {
         implementation files('lib/ortools-java-8.0.8283.jar')
         implementation files('lib/ortools-win32-x86-64-8.0.8283.jar')
         implementation 'com.panavis.open-source:google-ortools-java:7.8.7961' // get other dependencies
-    } else if (os.contains('macosx')) {
-        implementation 'io.github.ejif.ortools:ortools:0.0.2'
-        implementation 'io.github.ejif.ortools:ortools-macosx:0.0.2'
+    } else if (os.replace(' ', '').contains('macosx')) {
+        implementation 'io.github.ejif.ortools:or-tools:0.0.2'
+        implementation 'io.github.ejif.ortools:or-tools-macosx:0.0.2'
     }
 }
 
