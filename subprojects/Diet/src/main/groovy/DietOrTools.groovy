@@ -19,6 +19,8 @@ import com.google.ortools.linearsolver.MPVariable
 
 import static com.google.ortools.linearsolver.MPSolver.ResultStatus.OPTIMAL
 
+Loader.loadNativeLibraries()
+
 static addConstraint(MPSolver solver, List<MPVariable> vars, MPVariable comp, List<Double> coeffs) {
     solver.makeConstraint(0, 0).tap {constraint ->
         constraint.setCoefficient(comp, -1)
