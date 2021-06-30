@@ -13,44 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// needs manual install & configuration on macos and windows
-import io.github.ejif.ortools.Ortools
-import com.google.ortools.constraintsolver.IntVar
-import com.google.ortools.constraintsolver.Solver
+import com.google.ortools.Loader
+import com.google.ortools.linearsolver.MPSolver
+import com.google.ortools.linearsolver.MPVariable
 
-Ortools.load()
+import static com.google.ortools.linearsolver.MPSolver.ResultStatus.OPTIMAL
 
-new Solver('Send+More=Money').with {
-    def s = makeIntVar(1, 9, 's')
-    def e = makeIntVar(0, 9, 'e')
-    def n = makeIntVar(0, 9, 'n')
-    def d = makeIntVar(0, 9, 'd')
-    def m = makeIntVar(1, 9, 'm')
-    def o = makeIntVar(0, 9, 'o')
-    def r = makeIntVar(0, 9, 'r')
-    def y = makeIntVar(0, 9, 'y')
-
-    IntVar[] all = [s, e, n, d, m, o, r, y]
-    IntVar[] scalar = [s, e, n, d, m, o, r, e, m, o, n, e, y]
-    int[] coeffs = [
-            1000,  100,  10,  1,  //  S E N D +
-            1000,  100,  10,  1,  //  M O R E =
-            -10000, -1000, -100, -10, -1   //  M O N E Y
-    ]
-
-    addConstraint(makeScalProdEquality(scalar, coeffs, 0))
-    addConstraint(makeAllDifferent(all))
-
-    def db = makePhase(all, INT_VAR_DEFAULT, INT_VALUE_DEFAULT)
-    newSearch(db)
-    while (nextSolution()) {
-        println all.join(' ')
+static addConstraint(MPSolver solver, List<MPVariable> vars, MPVariable comp, List<Double> coeffs) {
+    solver.makeConstraint(0, 0).tap {constraint ->
+        constraint.setCoefficient(comp, -1)
+        vars.indices.each { i ->
+            constraint.setCoefficient(vars[i], coeffs[i])
+        }
     }
-    endSearch()
-
-    // Statistics
-    println "Solutions: ${solutions()}"
-    println "Failures: ${failures()}"
-    println "Branches: ${branches()}"
-    println "Wall time: ${wallTime()}ms"
 }
+
+MPSolver.createSolver("SCIP").with {solver ->
+    def bread  = makeNumVar(0, infinity(),'bread')
+    def milk   = makeNumVar(0, 1, 'milk')
+    def cheese = makeNumVar(0, infinity(), 'cheese')
+    def potato = makeNumVar(0, infinity(), 'potato')
+    def fish   = makeNumVar(0.5, infinity(), 'fish')
+    def yogurt = makeNumVar(0, infinity(), 'yogurt')
+
+    def food = [bread, milk, cheese, potato, fish, yogurt]
+
+    def cost = makeNumVar(0, infinity(),'Cost')
+    addConstraint(solver, food, cost, [2.0, 3.5, 8.0, 1.5, 11.0, 1.0])
+    def protein = makeNumVar(0, 10,'Protein')
+    addConstraint(solver, food, protein, [4.0, 8.0, 7.0, 1.3, 8.0, 9.2])
+    def fat = makeNumVar(8, infinity(),'Fat')
+    addConstraint(solver, food, fat, [1.0, 5.0, 9.0, 0.1, 7.0, 1.0])
+    def carbs = makeNumVar(10, infinity(),'Carbs')
+    addConstraint(solver, food, carbs, [15.0, 11.7, 0.4, 22.6, 0.0, 17.0])
+    def cals = makeNumVar(300, infinity(),'Calories')
+    addConstraint(solver, food, cals, [90, 120, 106, 97, 130, 180])
+
+    def components = [protein, fat, carbs, cals]
+
+    objective().with {objective ->
+        objective.setCoefficient(cost, 1)
+        objective.setMinimization()
+        def result = solve()
+        println result
+        if (result == OPTIMAL) {
+            println "Solution: " + objective.value()
+            println "Foods: ${food.collect{ "${it.name()} ${it.solutionValue()}" }}"
+            println "Components: ${components.collect{ "${it.name()} ${it.solutionValue()}" }}"
+            println "Iterations: ${iterations()}, Wall time: ${wallTime()}ms"
+        } else {
+            System.err.println "The problem does not have an optimal solution!"
+        }
+    }
+}
+
+// see also:
+// https://www.kaggle.com/nbuhagiar/diet-optimization-with-or-tools
